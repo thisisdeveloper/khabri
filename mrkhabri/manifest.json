@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Mr Khabari",
+  "description": "A Api Client By SK",
+  "version": "1.0",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "logo512.png",
+      "48": "logo512.png",
+      "128": "logo512.png"
+    }
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "icons": {
+    "16": "logo512.png",
+    "48": "logo512.png",
+    "128": "logo512.png"
+  }
+}
