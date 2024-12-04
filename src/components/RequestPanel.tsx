@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Play, Plus, Save, FileJson, X } from 'lucide-react';
 import { useStore } from '../store';
 import { sendRequest } from '../utils/api';
-import { Method } from '../types';
+import { Method, QueryParam, AuthType } from '../types';
 import { Editor } from '@monaco-editor/react';
 import { formatJSON, isValidJSON } from '../utils/jsonFormatter';
+import { parseQueryString, buildUrl, getBaseUrl } from '../utils/urlUtils';
 import { Authorization } from './Authorization';
 
 const methods: Method[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
@@ -45,6 +46,68 @@ export function RequestPanel() {
   } = useStore();
 
   const activeRequest = tabs.find(tab => tab.id === activeTab);
+  const currentParams = Array.isArray(activeRequest?.params) ? activeRequest.params : [];
+
+  const handleUrlChange = (url: string) => {
+    if (!activeRequest) return;
+
+    // Extract query parameters from URL
+    const params = parseQueryString(url);
+    const baseUrl = getBaseUrl(url);
+
+    updateTab(activeRequest.id, {
+      url: baseUrl,
+      params
+    });
+  };
+
+  const handleParamChange = (index: number, key: string, value: string, enabled: boolean = true) => {
+    if (!activeRequest) return;
+
+    const newParams = [...currentParams];
+    
+    // Update existing param or add new one
+    if (index < newParams.length) {
+      newParams[index] = { key, value, enabled };
+    } else {
+      newParams.push({ key, value, enabled });
+    }
+
+    // Remove empty params at the end
+    while (newParams.length > 0 && !newParams[newParams.length - 1].key && !newParams[newParams.length - 1].value) {
+      newParams.pop();
+    }
+
+    updateTab(activeRequest.id, { params: newParams });
+  };
+
+  const handleParamToggle = (index: number) => {
+    if (!activeRequest || !activeRequest.params) return;
+
+    const newParams = [...currentParams];
+    if (index < newParams.length) {
+      newParams[index] = { ...newParams[index], enabled: !newParams[index].enabled };
+      updateTab(activeRequest.id, { params: newParams });
+    }
+  };
+
+  const handleRemoveParam = (index: number) => {
+    if (!activeRequest || !activeRequest.params) return;
+
+    const newParams = [...currentParams];
+    newParams.splice(index, 1);
+    updateTab(activeRequest.id, { params: newParams });
+  };
+
+  // Update URL when params change
+  useEffect(() => {
+    if (!activeRequest) return;
+    
+    const fullUrl = buildUrl(activeRequest.url, currentParams);
+    if (fullUrl !== activeRequest.url) {
+      updateTab(activeRequest.id, { url: fullUrl });
+    }
+  }, [activeRequest?.params]);
 
   const handleSend = async () => {
     if (!activeRequest) return;
@@ -60,17 +123,6 @@ export function RequestPanel() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleParamChange = (index: number, key: string, value: string) => {
-    if (!activeRequest) return;
-    
-    const params = { ...activeRequest.params };
-    if (key) {
-      params[key] = value;
-    }
-    
-    updateTab(activeRequest.id, { params });
   };
 
   const handleHeaderChange = (index: number, key: string, value: string) => {
@@ -115,19 +167,13 @@ export function RequestPanel() {
               <option key={method} value={method}>{method}</option>
             ))}
           </select>
-          <div className="flex-1">
-            <input
-              type="text"
-              value={activeRequest?.url || ''}
-              onChange={(e) => {
-                if (activeRequest) {
-                  updateTab(activeRequest.id, { url: e.target.value });
-                }
-              }}
-              placeholder="Enter request URL"
-              className="w-full px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
-            />
-          </div>
+          <input
+            type="text"
+            value={activeRequest?.url || ''}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            placeholder="Enter request URL"
+            className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+          />
           <button 
             onClick={handleSend}
             className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-medium transition flex items-center gap-2 whitespace-nowrap"
@@ -224,30 +270,46 @@ export function RequestPanel() {
         <div className="p-4">
           {activeSection === 'params' && (
             <div className="space-y-3">
-              {[0, 1].map((i) => (
-                <div key={i} className="flex gap-3">
+              {[...currentParams, { key: '', value: '', enabled: true }].map((param, index) => (
+                <div key={index} className="flex gap-3 items-center">
+                  <button
+                    onClick={() => handleParamToggle(index)}
+                    className={`p-2 rounded-md transition ${
+                      param.enabled
+                        ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                        : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 border-2 rounded ${
+                      param.enabled
+                        ? 'border-emerald-500 bg-emerald-500'
+                        : 'border-gray-400'
+                    }`} />
+                  </button>
                   <input
                     type="text"
+                    value={param.key}
+                    onChange={(e) => handleParamChange(index, e.target.value, param.value, param.enabled)}
                     placeholder="Key"
-                    onChange={(e) => {
-                      handleParamChange(i, e.target.value, '');
-                    }}
                     className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
                   />
                   <input
                     type="text"
+                    value={param.value}
+                    onChange={(e) => handleParamChange(index, param.key, e.target.value, param.enabled)}
                     placeholder="Value"
-                    onChange={(e) => {
-                      handleParamChange(i, Object.keys(activeRequest?.params || {})[i] || '', e.target.value);
-                    }}
                     className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
                   />
+                  {index < currentParams.length && (
+                    <button
+                      onClick={() => handleRemoveParam(index)}
+                      className="p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ))}
-              <button className="text-sm text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 flex items-center gap-1.5">
-                <Plus className="w-4 h-4" />
-                Add Row
-              </button>
             </div>
           )}
 
