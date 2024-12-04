@@ -506,7 +506,7 @@ export function RequestPanel() {
                           },
                         });
                       }}
-                      theme={document.documentElement.classList.contains('dark') ? 'khabariDark' : 'khabariLight'}
+                      theme={document.documentElement.classList.contains('dark') ? 'khabariDark' : 'khabariDark'} // khabariLight
                     />
                   </div>
                 </>
