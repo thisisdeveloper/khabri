@@ -78,7 +78,8 @@ export const useStore = create<AppState>()(
         return {
           tabs: newTabs,
           activeTab: state.activeTab === id ? newTabs[0].id : state.activeTab,
-          tabResponses: remainingResponses
+          tabResponses: remainingResponses,
+          response: state.activeTab === id ? null : state.response
         };
       }),
 
@@ -94,6 +95,7 @@ export const useStore = create<AppState>()(
       })),
       
       setActiveSection: (section) => set({ activeSection: section }),
+      
       setResponse: (response) => set((state) => {
         if (response) {
           return {
@@ -125,6 +127,8 @@ export const useStore = create<AppState>()(
       name: 'khabari-storage',
       partialize: (state) => ({
         tabs: state.tabs,
+        activeTab: state.activeTab,
+        response: state.response,
         tabResponses: state.tabResponses,
         history: state.history
       })
