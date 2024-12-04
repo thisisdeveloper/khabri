@@ -23,6 +23,11 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
       requestHeaders.set(key, value);
     });
 
+    // Add CORS headers
+    requestHeaders.set('Access-Control-Allow-Origin', '*');
+    requestHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    requestHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     // Convert Headers back to plain object for fetch
     const headers: Record<string, string> = {};
     requestHeaders.forEach((value, key) => {
@@ -33,6 +38,10 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
     const options: RequestInit = {
       method: request.method,
       headers,
+      mode: 'cors',
+      credentials: 'omit', // Try with 'omit' first
+      cache: 'no-cache',
+      redirect: 'follow',
     };
 
     // Add body for appropriate methods
@@ -40,17 +49,43 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
       options.body = request.body;
     }
 
+    // For OPTIONS preflight request
+    if (request.method === 'OPTIONS') {
+      return {
+        status: 200,
+        statusText: 'OK',
+        data: null,
+        headers: headers,
+        time: 0,
+        size: '0 B',
+        timestamp: Date.now()
+      };
+    }
+
     // Send the request
     console.log('Sending request with headers:', headers); // Debug log
     const response = await fetch(url, options);
-    const data = await response.json();
+    
+    // Handle response based on content type
+    let data;
+    const contentType = response.headers.get('content-type');
+    try {
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+    } catch (error) {
+      console.warn('Failed to parse response:', error);
+      data = await response.text();
+    }
     
     // Calculate response time and size
     const endTime = performance.now();
     const time = endTime - startTime;
     
     // Get response size
-    const size = new Blob([JSON.stringify(data)]).size;
+    const size = new Blob([typeof data === 'string' ? data : JSON.stringify(data)]).size;
     const sizeStr = size > 1024 ? `${(size / 1024).toFixed(2)} KB` : `${size} B`;
 
     // Get response headers
