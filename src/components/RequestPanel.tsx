@@ -476,7 +476,8 @@ export function RequestPanel() {
                       Format JSON
                     </button>
                   </div>
-                  <div className="h-48 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                  <div className="resize-y overflow-hidden border border-gray-200 dark:border-gray-600 rounded-md"
+                       style={{ minHeight: '12rem', height: '12rem', maxHeight: '50vh' }}>
                     <Editor
                       defaultLanguage="json"
                       value={activeRequest?.body || ''}
@@ -485,7 +486,11 @@ export function RequestPanel() {
                           updateTab(activeRequest.id, { body: value || '' });
                         }
                       }}
-                      options={editorOptions}
+                      options={{
+                        ...editorOptions,
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                      }}
                       beforeMount={(monaco) => {
                         monaco.editor.defineTheme('khabariLight', {
                           base: 'vs',
