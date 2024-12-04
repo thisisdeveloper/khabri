@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Play, Plus, Save, FileJson, X } from 'lucide-react';
 import { useStore } from '../store';
 import { sendRequest } from '../utils/api';
@@ -45,8 +45,74 @@ export function RequestPanel() {
     setIsLoading
   } = useStore();
 
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    tabId: string;
+  } | null>(null);
+  
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabName, setEditingTabName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
   const activeRequest = tabs.find(tab => tab.id === activeTab);
   const currentParams = Array.isArray(activeRequest?.params) ? activeRequest.params : [];
+
+  useEffect(() => {
+    if (editingTabId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingTabId]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenu) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.context-menu')) {
+          setContextMenu(null);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [contextMenu]);
+
+  const handleTabContextMenu = (e: React.MouseEvent, tabId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      tabId,
+    });
+  };
+
+  const handleStartRename = (tabId: string) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (tab) {
+      setEditingTabId(tabId);
+      setEditingTabName(tab.name);
+      setContextMenu(null);
+    }
+  };
+
+  const handleFinishRename = () => {
+    if (editingTabId && editingTabName.trim()) {
+      updateTab(editingTabId, { name: editingTabName.trim() });
+      setEditingTabId(null);
+      setEditingTabName('');
+    }
+  };
+
+  const handleTabKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleFinishRename();
+    } else if (e.key === 'Escape') {
+      setEditingTabId(null);
+      setEditingTabName('');
+    }
+  };
 
   const handleUrlChange = (url: string) => {
     if (!activeRequest) return;
@@ -193,13 +259,27 @@ export function RequestPanel() {
             <div
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
               className={`group px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-2 cursor-pointer ${
                 activeTab === tab.id
                   ? 'border-emerald-500 text-emerald-500 dark:text-emerald-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
-              <span>{tab.name}</span>
+              {editingTabId === tab.id ? (
+                <input
+                  ref={editInputRef}
+                  type="text"
+                  value={editingTabName}
+                  onChange={(e) => setEditingTabName(e.target.value)}
+                  onKeyDown={handleTabKeyDown}
+                  onBlur={handleFinishRename}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-32 px-1 py-0.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400"
+                />
+              ) : (
+                <span>{tab.name}</span>
+              )}
               {tabs.length > 1 && (
                 <div
                   onClick={(e) => handleCloseTab(e, tab.id)}
@@ -222,6 +302,29 @@ export function RequestPanel() {
           <Plus className="w-5 h-5" />
         </button>
       </div>
+
+      {contextMenu && (
+        <div
+          className="context-menu fixed z-50 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button
+            onClick={() => handleStartRename(contextMenu.tabId)}
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            Rename
+          </button>
+          <button
+            onClick={() => {
+              removeTab(contextMenu.tabId);
+              setContextMenu(null);
+            }}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       <div className="p-4">
         <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
