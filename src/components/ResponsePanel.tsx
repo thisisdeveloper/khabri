@@ -7,8 +7,6 @@ export function ResponsePanel() {
   const [view, setView] = React.useState<'preview' | 'raw' | 'headers'>('preview');
   const [format, setFormat] = React.useState<'json' | 'table' | 'image'>('json');
 
-  if (!response && !isLoading) return null;
-
   const isSuccess = response?.status >= 200 && response?.status < 300;
 
   const handleDownload = () => {
@@ -161,7 +159,7 @@ export function ResponsePanel() {
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-500 border-t-transparent" />
               <span className="text-sm font-medium">Sending request...</span>
             </div>
-          ) : response && (
+          ) : response ? (
             <>
               <div className="flex items-center gap-2">
                 {isSuccess ? (
@@ -181,9 +179,13 @@ export function ResponsePanel() {
                 Size: {response.size}
               </div>
             </>
+          ) : (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Send a request to see the response
+            </div>
           )}
         </div>
-        {!isLoading && response && (
+        {response && !isLoading && (
           <div className="flex items-center gap-2">
             <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
               {[
@@ -217,16 +219,16 @@ export function ResponsePanel() {
         )}
       </div>
 
-      {!isLoading && response && (
+      {response && !isLoading && (
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {view === 'preview' && (
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 {[
-                  { icon: FileJson, value: 'json' },
-                  { icon: Table, value: 'table' },
-                  { icon: Image, value: 'image' }
-                ].map(({ icon: Icon, value }) => (
+                  { icon: FileJson, value: 'json', label: 'JSON' },
+                  { icon: Table, value: 'table', label: 'Table' },
+                  { icon: Image, value: 'image', label: 'Image' }
+                ].map(({ icon: Icon, value, label }) => (
                   <button
                     key={value}
                     onClick={() => setFormat(value as typeof format)}
@@ -237,7 +239,7 @@ export function ResponsePanel() {
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    {value.charAt(0).toUpperCase() + value.slice(1)}
+                    {label}
                   </button>
                 ))}
               </div>

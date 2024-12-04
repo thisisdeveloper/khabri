@@ -42,7 +42,8 @@ export function RequestPanel() {
     removeTab,
     updateTab,
     setResponse,
-    setIsLoading
+    setIsLoading,
+    addToHistory
   } = useStore();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -179,13 +180,26 @@ export function RequestPanel() {
     if (!activeRequest) return;
     
     setIsLoading(true);
-    setResponse(null);
+    const startTime = performance.now();
     
     try {
       const response = await sendRequest(activeRequest);
       setResponse(response);
+      addToHistory({
+        ...activeRequest,
+        timestamp: Date.now()
+      });
     } catch (error) {
       console.error('Request failed:', error);
+      setResponse({
+        status: 0,
+        statusText: error.message,
+        data: { error: error.message },
+        headers: {},
+        time: 0,
+        size: '0 bytes',
+        timestamp: Date.now()
+      });
     } finally {
       setIsLoading(false);
     }

@@ -11,12 +11,14 @@ interface AppState {
   response: ResponseData | null;
   isLoading: boolean;
   history: RequestTab[];
+  tabResponses: Record<string, ResponseData>;
   addTab: () => void;
   removeTab: (id: string) => void;
   updateTab: (id: string, updates: Partial<RequestTab>) => void;
   setActiveTab: (id: string) => void;
   setActiveSection: (section: 'params' | 'headers' | 'body' | 'auth') => void;
   setResponse: (response: ResponseData | null) => void;
+  setTabResponse: (tabId: string, response: ResponseData) => void;
   setIsLoading: (loading: boolean) => void;
   addToHistory: (request: RequestTab) => void;
 }
@@ -47,7 +49,8 @@ const DEFAULT_STATE = {
   activeSection: 'params' as const,
   response: null,
   isLoading: false,
-  history: []
+  history: [],
+  tabResponses: {}
 };
 
 export const useStore = create<AppState>()(
@@ -71,9 +74,11 @@ export const useStore = create<AppState>()(
       removeTab: (id) => set((state) => {
         if (state.tabs.length === 1) return state;
         const newTabs = state.tabs.filter(tab => tab.id !== id);
+        const { [id]: removedResponse, ...remainingResponses } = state.tabResponses;
         return {
           tabs: newTabs,
-          activeTab: state.activeTab === id ? newTabs[0].id : state.activeTab
+          activeTab: state.activeTab === id ? newTabs[0].id : state.activeTab,
+          tabResponses: remainingResponses
         };
       }),
 
@@ -83,9 +88,33 @@ export const useStore = create<AppState>()(
         )
       })),
 
-      setActiveTab: (id) => set({ activeTab: id }),
+      setActiveTab: (id) => set((state) => ({ 
+        activeTab: id,
+        response: state.tabResponses[id] || null
+      })),
+      
       setActiveSection: (section) => set({ activeSection: section }),
-      setResponse: (response) => set({ response }),
+      setResponse: (response) => set((state) => {
+        if (response) {
+          return {
+            response,
+            tabResponses: {
+              ...state.tabResponses,
+              [state.activeTab]: response
+            }
+          };
+        }
+        return { response };
+      }),
+      
+      setTabResponse: (tabId, response) => set((state) => ({
+        tabResponses: {
+          ...state.tabResponses,
+          [tabId]: response
+        },
+        response: state.activeTab === tabId ? response : state.response
+      })),
+
       setIsLoading: (loading) => set({ isLoading: loading }),
       
       addToHistory: (request) => set((state) => ({
@@ -96,6 +125,7 @@ export const useStore = create<AppState>()(
       name: 'khabari-storage',
       partialize: (state) => ({
         tabs: state.tabs,
+        tabResponses: state.tabResponses,
         history: state.history
       })
     }
