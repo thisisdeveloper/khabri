@@ -27,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
               </div>
               <span className="text-xl font-semibold bg-gradient-to-r from-emerald-500 to-purple-500 text-transparent bg-clip-text">
-                Khabari
+                Mr. Khabri
               </span>
             </div>
             <nav className="flex gap-1">
