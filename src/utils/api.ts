@@ -9,9 +9,25 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
     // Build the final URL with query parameters
     const url = buildUrl(request.url, request.params);
 
-    // Merge authentication headers with request headers
+    // Initialize headers with request headers
+    const requestHeaders = new Headers();
+    
+    // Add default headers
+    Object.entries(request.headers).forEach(([key, value]) => {
+      requestHeaders.set(key, value);
+    });
+
+    // Add auth headers if configured
     const authHeaders = generateAuthHeaders(request.auth);
-    const headers = { ...request.headers, ...authHeaders };
+    Object.entries(authHeaders).forEach(([key, value]) => {
+      requestHeaders.set(key, value);
+    });
+
+    // Convert Headers back to plain object for fetch
+    const headers: Record<string, string> = {};
+    requestHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
 
     // Prepare the request options
     const options: RequestInit = {
@@ -20,11 +36,12 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
     };
 
     // Add body for appropriate methods
-    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+    if (['POST', 'PUT', 'PATCH'].includes(request.method) && request.body) {
       options.body = request.body;
     }
 
     // Send the request
+    console.log('Sending request with headers:', headers); // Debug log
     const response = await fetch(url, options);
     const data = await response.json();
     
@@ -52,6 +69,7 @@ export async function sendRequest(request: RequestTab): Promise<ResponseData> {
       timestamp: Date.now()
     };
   } catch (error) {
+    console.error('Request failed:', error); // Debug log
     throw new Error(error instanceof Error ? error.message : 'Failed to send request');
   }
 }
