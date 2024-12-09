@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Archive, Book, Clock, FolderTree, History, Search, Settings } from 'lucide-react';
 import { ContextMenu } from './ContextMenu';
 
@@ -9,22 +9,21 @@ interface MenuItem {
   parentId?: string;
 }
 
-export function Sidebar() {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [contextMenu, setContextMenu] = React.useState<{ x: number; y: number; item: MenuItem } | null>(null);
-  const [items, setItems] = React.useState<MenuItem[]>([
-    { id: '1', label: 'Authentication', type: 'collection' },
-    { id: '2', label: 'Login Request', type: 'request', parentId: '1' },
-    { id: '3', label: 'Register Request', type: 'request', parentId: '1' },
-    { id: '4', label: 'Users', type: 'collection' },
-    { id: '5', label: 'Get Users', type: 'request', parentId: '4' },
-    { id: '6', label: 'Create User', type: 'request', parentId: '4' },
-    { id: '7', label: 'Products', type: 'collection' },
-    { id: '8', label: 'Product List', type: 'request', parentId: '7' },
-    { id: '9', label: 'Login Flow', type: 'saved' },
-    { id: '10', label: 'User Creation', type: 'saved' },
-    { id: '11', label: 'GET /users', type: 'recent' },
-  ]);
+export const Sidebar = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: MenuItem } | null>(null);
+  const [items, setItems] = useState<MenuItem[]>([]);
+
+  useEffect(() => {
+    const storedItems = localStorage.getItem('collections');
+    if (storedItems) {
+      setItems(JSON.parse(storedItems));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('collections', JSON.stringify(items));
+  }, [items]);
 
   const filteredItems = items.filter(item => 
     item.label.toLowerCase().includes(searchQuery.toLowerCase())
@@ -178,4 +177,4 @@ export function Sidebar() {
       )}
     </div>
   );
-}
+};
