@@ -232,49 +232,14 @@ export function RequestPanel() {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 w-full">
-          <select
-            value={activeRequest?.method}
-            onChange={(e) => {
-              if (activeRequest) {
-                updateTab(activeRequest.id, { method: e.target.value as Method });
-              }
-            }}
-            className="w-28 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
-          >
-            {methods.map(method => (
-              <option key={method} value={method}>{method}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={activeRequest?.url || ''}
-            onChange={(e) => handleUrlChange(e.target.value)}
-            placeholder="Enter request URL"
-            className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
-          />
-          <button 
-            onClick={handleSend}
-            className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-medium transition flex items-center gap-2 whitespace-nowrap"
-          >
-            <Play className="w-4 h-4" />
-            Send
-          </button>
-          <button className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400">
-            <Save className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
       <div className="flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex-1 flex">
+        <div className="flex-1 flex max-w-[99%] overflow-x-auto">
           {tabs.map(tab => (
             <div
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
-              className={`group px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-2 cursor-pointer ${
+              className={`flex-shrink-0 w-auto group px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-2 cursor-pointer ${
                 activeTab === tab.id
                   ? 'border-emerald-500 text-emerald-500 dark:text-emerald-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -315,6 +280,41 @@ export function RequestPanel() {
         >
           <Plus className="w-5 h-5" />
         </button>
+      </div>
+
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 w-full">
+          <select
+            value={activeRequest?.method}
+            onChange={(e) => {
+              if (activeRequest) {
+                updateTab(activeRequest.id, { method: e.target.value as Method });
+              }
+            }}
+            className="w-28 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+          >
+            {methods.map(method => (
+              <option key={method} value={method}>{method}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={activeRequest?.url || ''}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            placeholder="Enter request URL"
+            className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+          />
+          <button 
+            onClick={handleSend}
+            className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-medium transition flex items-center gap-2 whitespace-nowrap"
+          >
+            <Play className="w-4 h-4" />
+            Send
+          </button>
+          <button className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400">
+            <Save className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {contextMenu && (
