@@ -25,6 +25,22 @@ export const Sidebar = () => {
     localStorage.setItem('collections', JSON.stringify(items));
   }, [items]);
 
+  const addCollection = (name: string) => {
+    const newCollection: MenuItem = { id: Date.now().toString(), label: name, type: 'collection' };
+    setItems(prev => {
+      const updatedItems = [...prev, newCollection];
+      localStorage.setItem('collections', JSON.stringify(updatedItems));
+      return updatedItems;
+    });
+  };
+
+  const handleAddCollection = () => {
+    const name = prompt('Enter collection name:');
+    if (name) {
+      addCollection(name);
+    }
+  };
+
   const filteredItems = items.filter(item => 
     item.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -120,7 +136,7 @@ export const Sidebar = () => {
               <Book className="w-4 h-4 mr-2 text-gray-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collections</span>
             </div>
-            <button className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+            <button className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" onClick={handleAddCollection}>
               <Settings className="w-4 h-4" />
             </button>
           </div>
